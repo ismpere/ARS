@@ -92,12 +92,12 @@ int main(int argc, char** argv){
         //Se recibe la respuesta en el buffer respuesta
         err = recvfrom(sock, respuesta, 512, 0, (struct sockaddr *) &dest_addr, &addrlen);
 
-        printf("Recibo el siguiente mensaje: %s\n", respuesta);
-
         if(err<0){
             perror("recv()");
             exit(EXIT_FAILURE);
         }
+
+        memset(buffQuote, 0, sizeof(buffQuote));
 
         //Se extrae la cita del dia de fortune
         system("/usr/games/fortune -s > /tmp/tt.txt");
@@ -111,7 +111,7 @@ int main(int argc, char** argv){
         fclose(fich);
 
         //Se resetea el mensaje y se concatena con la cabecera y la cita del dia
-        memset(mensaje, 0, 512);
+        memset(mensaje, 0, sizeof(mensaje));
         strcat(mensaje,cabecera);
         strcat(mensaje, buffQuote);
 

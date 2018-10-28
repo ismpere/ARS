@@ -12,9 +12,6 @@
 
 int main(int argc, char** argv){
 
-    //char name[10] = "QOTD";
-    //char proto[10] = "UDP";
-
     //Se crean los array que albergaran los mensajes y respuestas
     char mensaje[100] = "Mensaje de prueba";
     char respuesta[512];
@@ -29,7 +26,6 @@ int main(int argc, char** argv){
     struct in_addr addr;
     //Creo la estructura para almacenar el servicio por nombre
     struct servent *serv;
-    //int puerto_introducido;
     //Se crea la variable que albergará el puerto
     int puerto;
 
@@ -113,7 +109,7 @@ int main(int argc, char** argv){
         exit(EXIT_FAILURE);
     }
 
-    //Se recibe la respuesta
+    //Se recibe la respuesta con recv ya que no nos hace falta saber los datos del remitente
     err = recv(sock, respuesta, 512, 0);
 
     if(err<0){
@@ -122,5 +118,5 @@ int main(int argc, char** argv){
     }
 
     //Se imprime la respuesta recibida del servidor
-    printf("Respuesta: %s\n", respuesta);
+    printf("%s\n", respuesta);
 }
