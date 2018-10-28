@@ -119,4 +119,6 @@ int main(int argc, char** argv){
 
     //Se imprime la respuesta recibida del servidor
     printf("%s\n", respuesta);
+
+    return(EXIT_SUCCESS);
 }
