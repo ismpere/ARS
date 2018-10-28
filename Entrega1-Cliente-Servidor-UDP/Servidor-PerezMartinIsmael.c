@@ -7,7 +7,7 @@
 
 #include <netdb.h>
 
-#define MAXLENGTH 100
+#define MAXLENGTH 512
 
 int main(int argc, char** argv){
 
@@ -102,10 +102,12 @@ int main(int argc, char** argv){
         //Se extrae la cita del dia de fortune
         system("/usr/games/fortune -s > /tmp/tt.txt");
         FILE *fich = fopen("/tmp/tt.txt","r");
-        int nc = 0;
-        do{
-            buffQuote[nc++] = fgetc(fich);
-        }while(nc < MAXLENGTH-1);
+        int contador = 0;
+        int nc = fgetc(fich);
+        while(nc!=EOF){
+            buffQuote[contador++] = nc;
+            nc = fgetc(fich);
+        }
         fclose(fich);
 
         //Se resetea el mensaje y se concatena con la cabecera y la cita del dia
