@@ -14,8 +14,7 @@
 
 int main(int argc, char** argv){
 
-    //Se crean los array que albergaran los mensajes y respuestas
-    char mensaje[100] = "Mensaje de prueba";
+    //Se crea el array que albergara la respuesta
     char respuesta[512];
 
     //Se comprueba la cantidad de argumentos
@@ -109,15 +108,6 @@ int main(int argc, char** argv){
 
     if(err<0){
         perror("connect()");
-        exit(EXIT_FAILURE);
-    }
-
-
-    //Se envia el mensaje
-    err = send(sock, mensaje, 512, 0);
-
-    if(err<0){
-        perror("send()");
         exit(EXIT_FAILURE);
     }
 

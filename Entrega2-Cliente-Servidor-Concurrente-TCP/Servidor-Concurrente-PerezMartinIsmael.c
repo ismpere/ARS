@@ -17,7 +17,6 @@ int main(int argc, char** argv){
     //Se define la cabecera de la respuesta y los buffer para los mensajes
     char cabecera[100] = "Quote Of The Day from vm2509\n";
 
-    char respuesta[512];
     char mensaje[512];
 
     static char buffQuote[MAXLENGTH];
@@ -116,14 +115,8 @@ int main(int argc, char** argv){
 
         //Si el proceso es el hijo, atiende la petición, si es el padre sigue recibiendo peticiones
         if(child == 0){
-            //Se recibe la respuesta en el buffer respuesta
-            err = recv(sock_connect, respuesta, 512, 0);
 
-            if(err<0){
-                perror("recv()");
-                exit(EXIT_FAILURE);
-            }
-
+            //Se resetea el contenido del buffer de la cita
             memset(buffQuote, 0, sizeof(buffQuote));
 
             //Se extrae la cita del dia de fortune
