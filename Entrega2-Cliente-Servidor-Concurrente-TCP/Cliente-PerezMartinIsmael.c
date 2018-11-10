@@ -1,9 +1,9 @@
 // Practica tema 6, Pérez Martín Ismael
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<errno.h>
-#include<string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
 
 #include <sys/socket.h>
 #include <sys/types.h>

@@ -1,9 +1,10 @@
 // Practica tema 6, Pérez Martín Ismael
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<errno.h>
-#include<string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <errno.h>
+#include <string.h>
 
 #include <sys/socket.h>
 
@@ -11,7 +12,31 @@
 
 #define MAXLENGTH 512
 
+// Se declaran las variables globales para albergar los sockets
+int sock;
+int sock_connect;
+
+//Se declara el manejador de señal para cerrar los socket
+void signal_handler(int signal);
+
+
+//Implementación del manejador de señal para el cierre de socket
+void signal_handler(int signal){
+
+    //Si se pulsa ctrl+c, se desconectan los socket
+    if(signal == SIGINT){
+
+        shutdown(sock, SHUT_RDWR);
+        shutdown(sock_connect, SHUT_RDWR);
+
+        exit(EXIT_SUCCESS);
+    }
+}
+
 int main(int argc, char** argv){
+
+    //Se vincula nuestro manejador de señal con la señal
+    signal(SIGINT, signal_handler);
 
     //Se define la cabecera de la respuesta y los buffer para los mensajes
     char cabecera[100] = "Quote Of The Day from vm2509\n";
