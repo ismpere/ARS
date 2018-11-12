@@ -27,8 +27,21 @@ void signal_handler(int signal){
     //Si se pulsa ctrl+c, se desconectan los socket
     if(signal == SIGINT){
 
-        shutdown(sock, SHUT_RDWR);
-        shutdown(sock_connect, SHUT_RDWR);
+        int err;
+
+        err = shutdown(sock, SHUT_RDWR);
+
+        if(err<0){
+                perror("shutdown() sock");
+                exit(EXIT_FAILURE);
+        }
+        
+        err = shutdown(sock_connect, SHUT_RDWR);
+
+        if(err<0){
+                perror("shutdown() sock_connect");
+                exit(EXIT_FAILURE);
+        }
 
         exit(EXIT_SUCCESS);
     }
@@ -165,6 +178,15 @@ int main(int argc, char** argv){
                 perror("send()");
                 exit(EXIT_FAILURE);
             }
+
+            err = close(sock_connect);
+
+            if(err<0){
+                perror("close()");
+                exit(EXIT_FAILURE);
+            }
+
+            return(EXIT_SUCCESS);
         }
         
     }
