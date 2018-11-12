@@ -28,17 +28,35 @@ void signal_handler(int signal){
 
         int err;
 
+        //Se apaga el socket de de escucha
         err = shutdown(sock, SHUT_RDWR);
 
         if(err<0){
                 perror("shutdown() sock");
                 exit(EXIT_FAILURE);
         }
+
+        //Se cierra el socket de escucha
+        err = close(sock);
+
+        if(err<0){
+                perror("close() sock");
+                exit(EXIT_FAILURE);
+        }
         
+        //Se apaga el socket de las conexiones aceptadas
         err = shutdown(sock_connect, SHUT_RDWR);
 
         if(err<0){
                 perror("shutdown() sock_connect");
+                exit(EXIT_FAILURE);
+        }
+
+        //Se apaga el socket de las conexiones aceptadas
+        err = close(sock_connect);
+
+        if(err<0){
+                perror("close() sock_connect");
                 exit(EXIT_FAILURE);
         }
 
@@ -169,13 +187,6 @@ int main(int argc, char** argv){
 
         if(err<0){
             perror("send()");
-            exit(EXIT_FAILURE);
-        }
-
-        err = close(sock_connect);
-
-        if(err<0){
-            perror("close()");
             exit(EXIT_FAILURE);
         }
     }
