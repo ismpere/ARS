@@ -99,7 +99,7 @@ int main(int argc, char** argv){
     //Se extrae el nombre del host
     err = gethostname(name, sizeof(name));
 
-    if(sock<0){
+    if(err<0){
 	perror("gethostname()");
 	exit(EXIT_FAILURE);
     }
