@@ -29,37 +29,37 @@ void signal_handler(int signal){
 
         int err;
 
-        //Se apaga el socket de de escucha
-        err = shutdown(sock, SHUT_RDWR);
+        // //Se apaga el socket de de escucha
+        // err = shutdown(sock, SHUT_RDWR);
 
-        if(err<0){
-                perror("shutdown() sock");
-                exit(EXIT_FAILURE);
-        }
+        // if(err<0){
+        //         perror("shutdown() sock");
+        //         exit(EXIT_FAILURE);
+        // }
 
         //Se cierra el socket de escucha
         err = close(sock);
 
         if(err<0){
-                perror("close() sock");
+                perror("close() father");
                 exit(EXIT_FAILURE);
         }
         
-        //Se apaga el socket de las conexiones aceptadas
-        err = shutdown(sock_connect, SHUT_RDWR);
+        // //Se apaga el socket de las conexiones aceptadas
+        // err = shutdown(sock_connect, SHUT_RDWR);
 
-        if(err<0){
-                perror("shutdown() sock_connect");
-                exit(EXIT_FAILURE);
-        }
+        // if(err<0){
+        //         perror("shutdown() sock_connect");
+        //         exit(EXIT_FAILURE);
+        // }
 
-        //Se apaga el socket de las conexiones aceptadas
-        err = close(sock_connect);
+        // //Se apaga el socket de las conexiones aceptadas
+        // err = close(sock_connect);
 
-        if(err<0){
-                perror("close() sock_connect");
-                exit(EXIT_FAILURE);
-        }
+        // if(err<0){
+        //         perror("close() sock_connect");
+        //         exit(EXIT_FAILURE);
+        // }
 
         exit(EXIT_SUCCESS);
     }
@@ -197,19 +197,19 @@ int main(int argc, char** argv){
                 exit(EXIT_FAILURE);
             }
 
-            //Se apaga el socket del hijo
-            err = shutdown(sock_connect, SHUT_RDWR);
+            // //Se apaga el socket del hijo
+            // err = shutdown(sock_connect, SHUT_RDWR);
 
-            if(err<0){
-                perror("shutdown()");
-                exit(EXIT_FAILURE);
-            }
+            // if(err<0){
+            //     perror("shutdown()");
+            //     exit(EXIT_FAILURE);
+            // }
 
             // Se cierra el socket del hijo
             err = close(sock_connect);
 
             if(err<0){
-                perror("close()");
+                perror("close() child");
                 exit(EXIT_FAILURE);
             }
 

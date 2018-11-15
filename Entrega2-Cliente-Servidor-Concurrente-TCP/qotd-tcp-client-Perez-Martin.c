@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <unistd.h>
 #include <netdb.h>
 
 int main(int argc, char** argv){
@@ -121,6 +122,35 @@ int main(int argc, char** argv){
 
     //Se imprime la respuesta recibida del servidor
     printf("%s\n", respuesta);
+
+    //
+    err = shutdown(sock, SHUT_RDWR);
+
+    if(err<0){
+        perror("shutdown() client");
+        exit(EXIT_FAILURE);
+    }
+
+    //Se recibe la respuesta con recv para comprobar que se ha cerrado la conexion
+    err = recv(sock, respuesta, 512, 0);
+
+    if(err<0){
+        perror("recv()");
+        exit(EXIT_FAILURE);
+    }
+
+    if(err!=0){
+        fprintf(stderr, "Error recv in shutdown\n");
+        exit(EXIT_FAILURE);
+    }
+
+    //Se cierra el socket del cliente
+    err = close(sock);
+
+    if(err<0){
+        perror("close() client");
+        exit(EXIT_FAILURE);
+    }
 
     return(EXIT_SUCCESS);
 }
