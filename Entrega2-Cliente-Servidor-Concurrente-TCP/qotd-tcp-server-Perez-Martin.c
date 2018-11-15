@@ -29,14 +29,6 @@ void signal_handler(int signal){
 
         int err;
 
-        // //Se apaga el socket de de escucha
-        // err = shutdown(sock, SHUT_RDWR);
-
-        // if(err<0){
-        //         perror("shutdown() sock");
-        //         exit(EXIT_FAILURE);
-        // }
-
         //Se cierra el socket de escucha
         err = close(sock);
 
@@ -45,22 +37,6 @@ void signal_handler(int signal){
                 exit(EXIT_FAILURE);
         }
         
-        // //Se apaga el socket de las conexiones aceptadas
-        // err = shutdown(sock_connect, SHUT_RDWR);
-
-        // if(err<0){
-        //         perror("shutdown() sock_connect");
-        //         exit(EXIT_FAILURE);
-        // }
-
-        // //Se apaga el socket de las conexiones aceptadas
-        // err = close(sock_connect);
-
-        // if(err<0){
-        //         perror("close() sock_connect");
-        //         exit(EXIT_FAILURE);
-        // }
-
         exit(EXIT_SUCCESS);
     }
 }
@@ -71,8 +47,10 @@ int main(int argc, char** argv){
     signal(SIGINT, signal_handler);
 
     //Se define la cabecera de la respuesta y los buffer para los mensajes
-    char cabecera[100] = "Quote Of The Day from vm2509\n";
+    char cabecera[100] = "Quote Of The Day from ";
+    char name[20];
 
+    
     char mensaje[512];
 
     static char buffQuote[MAXLENGTH];
@@ -117,6 +95,18 @@ int main(int argc, char** argv){
     int err;
     int child;
     struct sockaddr_in peer;
+
+    //Se extrae el nombre del host
+    err = gethostname(name, sizeof(name));
+
+    if(sock<0){
+	perror("gethostname()");
+	exit(EXIT_FAILURE);
+    }
+
+    //Se concatena la cabecera con el nombre de host
+    strcat(cabecera, name);
+    strcat(cabecera, ":\n");
 
     //Se crea la variable para almacenar el tamaño de la direccion destino
     socklen_t addrlen = sizeof(peer);
@@ -196,14 +186,6 @@ int main(int argc, char** argv){
                 perror("send()");
                 exit(EXIT_FAILURE);
             }
-
-            // //Se apaga el socket del hijo
-            // err = shutdown(sock_connect, SHUT_RDWR);
-
-            // if(err<0){
-            //     perror("shutdown()");
-            //     exit(EXIT_FAILURE);
-            // }
 
             // Se cierra el socket del hijo
             err = close(sock_connect);
