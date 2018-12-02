@@ -5,7 +5,7 @@
 #include <netdb.h>
 #include <errno.h>
 #include <string.h>
-#define tamNAME 100 //Tamaño máximo del nombre del archivo y de errstring
+#define SIZENAME 100 //Tamaño máximo del nombreFichero del archivo y de errstring
 #define BLOCKSIZE 512 //Tamaño máximo de datos que se enviarán en cada paquete
 
 void error(char *errstr){
@@ -29,21 +29,21 @@ void intToBytes(int num, char *bytes){
 }
 
 int main(int args, char **argv){
-    struct in_addr addr;              //Estructura donde se almacena laaddr del servidor (pasada como argumento)
+    struct in_addr addr;              //Estructura donde se almacena la addr del servidor (pasada como argumento)
     unsigned char opcode;           //Segundo byte del opcode
-    char nombre[SIZENAME];          //Nombre del archivo a enviar o recibir
+    char nombreFichero[SIZENAME];          //nombreFichero del archivo a enviar o recibir
     int informe;                      //1 = Imprimir informe de pasos; 0 = No
     
     int sock;                       //Identificador del socket
-    struct sockaddr_in src_addr;    //Estructura que contiene la direcc de origen (cliente)
-    struct sockaddr_in dst_addr;    //Estructura que contiene la direcc de destino (servidor)
-    socklen_t addrlen;                  //Longitud de la estructura dst_addr
+    struct sockaddr_in myaddr;    //Estructura que contiene la direcc de origen (cliente)
+    struct sockaddr_in dest_addr;    //Estructura que contiene la direcc de destino (servidor)
+    socklen_t len;                  //Longitud de la estructura dest_addr
     int puerto;
     
     char datagram[4+BLOCKSIZE];     //Datagrama para enviar y recibir datos 
-    int tam;                       //Tamaño del datagrama
+    int size;                       //Tamaño del datagrama
     int ack;                        //Número de paquete esperado
-    char *modoTftp = "octet";           //modoTftp de lectura/escritura
+    char *modo = "octet";           //Modo de lectura/escritura
     FILE *file;                     //Puntero al archivo para leer/escribir
     char *errcode[SIZENAME] =  {&datagram[4], //Si errcode es 0 se lee errstring, a partir del byte 4 del datagrama
                                 "Fichero no encontrado.",
@@ -56,8 +56,8 @@ int main(int args, char **argv){
     
     //LECTURA DE PARAMETROS
     if ((args == 4) || (args == 5)){
-        inet_aton(argv[1], &ip); //Se almacena la direcciónaddr en la estructura
-        sscanf(argv[3], "%s", nombre); //Se almacena el nombre del archivo
+        inet_aton(argv[1], &addr); //Se almacena la dirección addr en la estructura
+        sscanf(argv[3], "%s", nombreFichero); //Se almacena el nombreFichero del archivo
         puerto = getservbyname("tftp", "udp")->s_port; //El puerto se obtiene del sistema operativo
         
         if (! strcmp(argv[2], "-r")) //Se guarda el opcode
@@ -77,41 +77,41 @@ int main(int args, char **argv){
     //APERTURA DEL SOCKET
     if((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) error(strerror(errno));
 
-    src_addr.sin_family = AF_INET;
-    src_addr.sin_port = 0; //Se asigna el puerto 0 para que el sistema operativo lo complete
-    src_addr.sin_addr.s_addr = INADDR_ANY; //No se asignaaddr, para que el sistema operativo elija tarjeta de red
+    myaddr.sin_family = AF_INET;
+    myaddr.sin_port = 0; //Se asigna el puerto 0 para que el sistema operativo lo complete
+    myaddr.sin_addr.s_addr = INADDR_ANY; //No se asigna addr, para que el sistema operativo elija tarjeta de red
     
-    dst_addr.sin_family = AF_INET;
-    dst_addr.sin_port = puerto;
-    dst_addr.sin_addr = addr;
-    addrlen = tamof dst_addr;
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = puerto;
+    dest_addr.sin_addr = addr;
+    len = sizeof dest_addr;
     
-    if(bind(sock, (struct sockaddr *) &src_addr, tamof(src_addr)) == -1) error(strerror(errno));
+    if(bind(sock, (struct sockaddr *) &myaddr, sizeof(myaddr)) == -1) error(strerror(errno));
         
     //DATAGRAMA INICIAL
     intToBytes(opcode, datagram); //Opcode (lectura o escritura)
-    strcpy(&datagram[2], nombre); //Nombre del archivo, con el EOS incluido
-    strcpy(&datagram[2+strlen(nombre)+1], modoTftp); //modoTftp (octet o netascii), con el  EOS incluido
-    if(sendto(sock, datagram, 2+strlen(nombre)+1+strlen(modoTftp)+1, 0, (struct sockaddr *) &dst_addr, tamof(dst_addr)) == -1) error(strerror(errno));
+    strcpy(&datagram[2], nombreFichero); //nombreFichero del archivo, con el EOS incluido
+    strcpy(&datagram[2+strlen(nombreFichero)+1], modo); //Modo (octet o netascii), con el  EOS incluido
+    if(sendto(sock, datagram, 2+strlen(nombreFichero)+1+strlen(modo)+1, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr)) == -1) error(strerror(errno));
     
     //LECTURA DE DATOS DEL SERVIDOR
     if (opcode == 1){
         if(informe) printf("Enviada solicitud de lectura de %s a servidor TFTP en %s.\n", argv[3], argv[1]);
         ack = 1;
-        file = fopen(nombre, "wb");
+        file = fopen(nombreFichero, "wb");
         do{
-            if((size = recvfrom(sock, datagram, 4+BLOCKSIZE, 0, (struct sockaddr *) &dst_addr, &len)) == -1) error(strerror(errno));
+            if((size = recvfrom(sock, datagram, 4+BLOCKSIZE, 0, (struct sockaddr *) &dest_addr, &len)) == -1) error(strerror(errno));
             if (bytesToInt(datagram) == 3){ //El datagrama contiene datos
                 if(informe) printf("Recibido bloque %d.\n", bytesToInt(&datagram[2]));
                 intToBytes(4, datagram); //Se crea un datagrama ACK
                 if (bytesToInt(&datagram[2]) == ack){ //El paquete es el esperado
-                    fwrite(&datagram[4], 1, tam-4, file);
+                    fwrite(&datagram[4], 1, size-4, file);
                     intToBytes(ack, &datagram[2]);
                     ack++;
                 } else
                     intToBytes(ack-1, &datagram[2]);
                     
-                if(sendto(sock, datagram, 4, 0, (struct sockaddr *) &dst_addr, tamof(dst_addr)) == -1) error(strerror(errno));
+                if(sendto(sock, datagram, 4, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr)) == -1) error(strerror(errno));
                 if(informe) printf("Enviado ACK del bloque %d.\n", ack-1);
                 
             } else if (bytesToInt(datagram) == 5) //El datagrama contiene un mensaje de error
@@ -121,9 +121,9 @@ int main(int args, char **argv){
     //ESCRITURA DE DATOS EN EL SERVIDOR
     }else if (opcode == 2){
         if(informe) printf("Enviada solicitud de escritura en %s a servidor TFTP en %s.\n", argv[3], argv[1]);
-        file = fopen(nombre, "rb");
+        file = fopen(nombreFichero, "rb");
         
-        if(recvfrom(sock, datagram, 4+SIZENAME, 0, (struct sockaddr *) &dst_addr, &len) == -1) error(strerror(errno));
+        if(recvfrom(sock, datagram, 4+SIZENAME, 0, (struct sockaddr *) &dest_addr, &len) == -1) error(strerror(errno));
         if (bytesToInt(datagram) == 4){ //El datagrama es un ACK
             if(informe) printf("Recibido ACK del bloque %d.\n", bytesToInt(&datagram[2]));
             do{
@@ -131,11 +131,11 @@ int main(int args, char **argv){
                 fseek(file, BLOCKSIZE*ack, SEEK_SET);           //Se coloca el puntero al fichero en la posición correspondiente
                 intToBytes(3, datagram);                        //Se crea un datagrama de datos 
                 intToBytes(ack+1, &datagram[2]);                //Se escribe el número de bloque que se va a enviar
-                tam = fread(&datagram[4], 1, BLOCKSIZE, file); //Se escriben los datos
-                if(sendto(sock, datagram, 4+size, 0, (struct sockaddr *) &dst_addr, tamof(dst_addr)) == -1) error(strerror(errno));
+                size = fread(&datagram[4], 1, BLOCKSIZE, file); //Se escriben los datos
+                if(sendto(sock, datagram, 4+size, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr)) == -1) error(strerror(errno));
                 if(informe) printf("Enviado bloque %d.\n", ack+1);
             
-                if(recvfrom(sock, datagram, 4+SIZENAME, 0, (struct sockaddr *) &dst_addr, &len) == -1) error(strerror(errno));
+                if(recvfrom(sock, datagram, 4+SIZENAME, 0, (struct sockaddr *) &dest_addr, &len) == -1) error(strerror(errno));
                 if (bytesToInt(datagram) == 5) error(errcode[bytesToInt(&datagram[2])]);
                 if(informe) printf("Recibido ACK del bloque %d.\n", bytesToInt(&datagram[2]));
             }while ((size == BLOCKSIZE) || (bytesToInt(&datagram[2]) != ack+1)); //Se finaliza cuando se lee el último bloque y se recibe su ack

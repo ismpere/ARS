@@ -56,6 +56,9 @@ int main(int argc, char** argv){
     if(inet_aton(argv[1], &addr)==0){
         printf("IP not valid\n");
         exit(EXIT_FAILURE);
+    }else{
+            puerto = getservbyname("tftp", "udp")->s_port;
+            //puerto = htons(puerto);
     }
 
     //Se comprueba si se ha introducido bien la opcion de lectura/escritura
@@ -106,13 +109,6 @@ int main(int argc, char** argv){
                                 "Usuario desconocido."}; 
 
 
-    //Se crea e inicializa la estructura que albergara los datos de  la direccion local
-    struct sockaddr_in myaddr;
-
-    myaddr.sin_family = AF_INET;
-    myaddr.sin_port = 0;
-    myaddr.sin_addr.s_addr = INADDR_ANY;
-
     //Creo el socket
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -121,13 +117,12 @@ int main(int argc, char** argv){
         exit(EXIT_FAILURE);
     }
 
-    //Se bindea el socket
-    err = bind(sock, (struct sockaddr *) &myaddr, sizeof(myaddr));
+    //Se crea e inicializa la estructura que albergara los datos de  la direccion local
+    struct sockaddr_in myaddr;
 
-    if(err<0){
-        perror("bind()");
-        exit(EXIT_FAILURE);
-    }
+    myaddr.sin_family = AF_INET;
+    myaddr.sin_port = 0;
+    myaddr.sin_addr.s_addr = INADDR_ANY;
 
     //Se crea e inicializa la estructura de la dirección destino
     struct sockaddr_in dest_addr;
@@ -137,27 +132,33 @@ int main(int argc, char** argv){
     dest_addr.sin_addr = addr;
 
     //Se crea la variable para almacenar el tamaño de la direccion destino
-    socklen_t addrlen = sizeof(dest_addr);
+    socklen_t addrlen = sizeof dest_addr;
 
-    puerto = getservbyname("tftp", "udp")->s_port;
-    //puerto = htons(puerto);
+    //Se bindea el socket
+    err = bind(sock, (struct sockaddr *) &myaddr, sizeof(myaddr));
+
+    if(err<0){
+        perror("bind()");
+        exit(EXIT_FAILURE);
+    }
+
+
+
 
     //Preparacion del envio
     intToBytes(opcode, datagrama);
     strcpy(&datagrama[2], nombreFichero);
-    tam = 2+strlen(nombreFichero)+1;
-    strcpy(&datagrama[tam],modoTftp);
+    int i = = 2+strlen(nombreFichero)+1;
+    strcpy(&datagrama[i],modoTftp);
 
     //Se envia el mensaje
-    tam = strlen(nombreFichero)+strlen(modoTftp)+4;
+    i = strlen(nombreFichero)+strlen(modoTftp)+4;
     err = sendto(sock, datagrama, tam, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr));
 
     if(err<0){
         perror("sendto()");
         exit(EXIT_FAILURE);
     }
-
-    tam = 0;
 
         //LECTURA DE DATOS DEL SERVIDOR
     if (opcode == 1){
