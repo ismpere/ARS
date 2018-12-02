@@ -146,8 +146,8 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
     
-    //LECTURA DE DATOS DEL SERVIDOR
-    if (opcode == 1){
+    //Se inicia la lectura del archivo
+    if(opcode == 1){
         if(informe){
             printf("Enviada solicitud de lectura de %s a servidor tftp en %s .",nombreFichero,argv[1]);
         }
@@ -199,8 +199,11 @@ int main(int argc, char **argv){
         }while(tam == 4+TAMBLOQUE); //Al procesar un paquete de menos de TAMBLOQUE bytes, se finaliza
         
     //ESCRITURA DE DATOS EN EL SERVIDOR
-    }else if (opcode == 2){
-        if(informe) printf("Enviada solicitud de escritura en %s a servidor TFTP en %s.\n", argv[3], argv[1]);
+    }else if(opcode == 2){
+        if(informe){
+            printf("Enviada solicitud de escritura de %s a servidor tftp en %s .",nombreFichero,argv[1]);
+        }
+
         file = fopen(nombreFichero, "rb");
         
         if(recvfrom(sock, datagrama, 4+TAMNOMBRE, 0, (struct sockaddr *) &dest_addr, &addrlen) == -1) error(strerror(errno));
@@ -225,7 +228,7 @@ int main(int argc, char **argv){
     }
         
     if(informe){
-        printf("El bloque %d era el ultimo: cerramos el fichero.\n", ack);
+        printf("El bloque %d era el ultimo: cerramos el fichero.\n", ack-1);
     }
 
     //Se cierra el fichero 
