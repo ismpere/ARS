@@ -100,22 +100,42 @@ int main(int args, char **argv){
         ack = 1;
         file = fopen(nombreFichero, "wb");
         do{
-            if((size = recvfrom(sock, datagram, 4+BLOCKSIZE, 0, (struct sockaddr *) &dest_addr, &len)) == -1) error(strerror(errno));
-            if (bytesToInt(datagram) == 3){ //El datagrama contiene datos
-                if(informe) printf("Recibido bloque %d.\n", bytesToInt(&datagram[2]));
-                intToBytes(4, datagram); //Se crea un datagrama ACK
-                if (bytesToInt(&datagram[2]) == ack){ //El paquete es el esperado
-                    fwrite(&datagram[4], 1, size-4, file);
-                    intToBytes(ack, &datagram[2]);
+            tam = recvfrom(sock, datagrama, 4+TAMBLOQUE, 0, (struct sockaddr *) &dest_addr, &addrlen);
+
+            if(tam<0){
+                perror("recvfrom()");
+                exit(EXIT_FAILURE);
+            }
+
+            if (bytesToInt(datagrama) == 3){
+
+                if(informe){
+                    printf("Recibido bloque del servidor tftp");
+                }
+
+                intToBytes(4, datagrama);
+                if(bytesToInt(&datagrama[2]) == ack){
+                    fwrite(&datagrama[4], 1, tam-4, file);
+                    intToBytes(ack, &datagrama[2]);
                     ack++;
-                } else
-                    intToBytes(ack-1, &datagram[2]);
+                }else{
+                    intToBytes(ack-1, &datagrama[2]);
+                }
                     
-                if(sendto(sock, datagram, 4, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr)) == -1) error(strerror(errno));
-                if(informe) printf("Enviado ACK del bloque %d.\n", ack-1);
+                err = sendto(sock, datagrama, 4, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr));
+                if(err<0){
+                    perror("sendto()");
+                    exit(EXIT_FAILURE);
+                }
+
+                if(informe){
+                    printf("Enviado ACK del bloque %d.\n", ack-1);
+                }
                 
-            } else if (bytesToInt(datagram) == 5) //El datagrama contiene un mensaje de error
-                error(errcode[bytesToInt(&datagram[2])]);
+            }else if(bytesToInt(datagrama) == 5){
+                //error(errcode[bytesToInt(&datagram[2])]);
+                printf("ERORRRR")
+            }
         }while(size == 4+BLOCKSIZE); //Al procesar un paquete de menos de BLOCKSIZE bytes, se finaliza
         
     //ESCRITURA DE DATOS EN EL SERVIDOR
