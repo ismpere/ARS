@@ -35,9 +35,9 @@ int main(int argc, char **argv){
     int informe;                      //1 = Imprimir informe de pasos; 0 = No
     
     int sock;                       //Identificador del socket
-    struct sockaddr_in myaddr;    //Estructura que contiene la direcc de origen (cliente)
+        //Estructura que contiene la direcc de origen (cliente)
     struct sockaddr_in dest_addr;    //Estructura que contiene la direcc de destino (servidor)
-    socklen_t addrlen;                  //Longitud de la estructura dest_addr
+                  //Longitud de la estructura dest_addr
     int puerto;
     int err;
     
@@ -65,6 +65,8 @@ int main(int argc, char **argv){
     if(inet_aton(argv[1], &addr)==0){
         printf("IP not valid\n");
         exit(EXIT_FAILURE);
+    }else{
+        puerto = getservbyname("tftp", "udp")->s_port;
     }
 
     //Se comprueba si se ha introducido bien la opcion de lectura/escritura
@@ -92,23 +94,35 @@ int main(int argc, char **argv){
         informe = 0;
         printf("Cuatro argumentos\n");
     }
-
-    puerto = getservbyname("tftp", "udp")->s_port;
     
-    //APERTURA DEL SOCKET
-    if((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) error(strerror(errno));
+    //Creo el socket
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
 
+    if(sock<0){
+        perror("socket()");
+        exit(EXIT_FAILURE);
+    }
+
+    struct sockaddr_in myaddr;
+       
     myaddr.sin_family = AF_INET;
     myaddr.sin_port = 0; //Se asigna el puerto 0 para que el sistema operativo lo complete
     myaddr.sin_addr.s_addr = INADDR_ANY; //No se asigna addr, para que el sistema operativo elija tarjeta de red
+
+    //Se bindea el socket
+    err = bind(sock, (struct sockaddr *) &myaddr, sizeof(myaddr));
+
+    if(err<0){
+        perror("bind()");
+        exit(EXIT_FAILURE);
+    }
     
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = puerto;
     dest_addr.sin_addr = addr;
-    addrlen = sizeof dest_addr;
+    socklen_t addrlen = sizeof dest_addr;
     
-    if(bind(sock, (struct sockaddr *) &myaddr, sizeof(myaddr)) == -1) error(strerror(errno));
-        
+    
     //datagrama INICIAL
     intToBytes(opcode, datagrama); //Opcode (lectura o escritura)
     strcpy(&datagrama[2], nombreFichero); //nombreFichero del archivo, con el EOS incluido
