@@ -134,13 +134,13 @@ int main(int argc, char** argv){
 
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = puerto;
-    dest_addr.sin_addr.s_addr = addr.s_addr;
+    dest_addr.sin_addr = addr;
 
     //Se crea la variable para almacenar el tamaño de la direccion destino
     socklen_t addrlen = sizeof(dest_addr);
 
     puerto = getservbyname("tftp", "udp")->s_port;
-    puerto = htons(puerto);
+    //puerto = htons(puerto);
 
     //Preparacion del envio
     intToBytes(opcode, datagrama);
