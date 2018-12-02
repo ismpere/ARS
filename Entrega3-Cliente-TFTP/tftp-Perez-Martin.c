@@ -12,11 +12,14 @@
 
 #include <netdb.h>
 
+#define TAMNOMBRE 100
+#define TAMBLOQUE 512
+
 int main(int argc, char** argv){
 
-    char nombreFichero[100];
-    char opcion[3];
-    char informe[3];
+    char nombreFichero[TAMNOMBRE];
+    unsigned char opcode;
+    int debug;
 
     //Se comprueba la cantidad de argumentos
     if (argc != 4 && argc != 5) {
@@ -38,13 +41,16 @@ int main(int argc, char** argv){
     }
 
     //Se comprueba si se ha introducido bien la opcion de lectura/escritura
-    if(strcmp(argv[2], "-r")!=0 && strcmp(argv[2], "-w")!=0){
+    if(strcmp(argv[2], "-r")==0){
+        opcode = 1;
+    }else if(strcmp(argv[2], "-w")==0){
+        opcode = 2;
+    }else{
         printf("Select opcion between -w or -r\n");
         exit(EXIT_FAILURE);
-    }else{
-        sscanf(argv[2],"%s",opcion);
-        sscanf(argv[3],"%s",nombreFichero);
     }
+
+    sscanf(argv[3],"%s",nombreFichero);
 
     //Se comprueba si se ha introducido la opcion de general el informe
     if(argc==5){
@@ -52,10 +58,11 @@ int main(int argc, char** argv){
             printf("Option not valid\n");
             exit(EXIT_FAILURE);
         }else{
-            sscanf(argv[4],"%s",informe);
+            debug = 1;
             printf("Cinco argumentos\n");
         }
     }else{
+        debug = 0;
         printf("Cuatro argumentos\n");
     }
 }
