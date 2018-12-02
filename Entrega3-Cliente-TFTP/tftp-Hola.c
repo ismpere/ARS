@@ -30,27 +30,16 @@ void intToBytes(int num, char *bytes){
 
 int main(int argc, char **argv){
 
-    struct in_addr addr;              
-    unsigned char opcode;           
-    char nombreFichero[TAMNOMBRE];         
-    int informe;                      
-    int sock;
+    char nombreFichero[TAMNOMBRE];
+    char datagrama[4+TAMBLOQUE]; 
+    char *modoTftp = "octet";  
+    unsigned char opcode;
+    int informe;
     int puerto;
-    int err;
-    
-    char datagrama[4+TAMBLOQUE];     
-    int tam;                       
-    int ack;                        
-    char *modoTftp = "octet";           
-    FILE *file;                     
-    char *codigoError[TAMNOMBRE] =  {&datagrama[4], 
-                                "Fichero no encontrado.",
-                                "Violación de acceso.",
-                                "Espacio de almacenamiento lleno.",
-                                "Operación TFTP ilegal.",
-                                "Identificador de transferencia desconocido.",
-                                "El fichero ya existe.",
-                                "Usuario desconocido."}; 
+
+    struct in_addr addr;  
+
+    FILE *file;                                   
     
     //Se comprueba la cantidad de argumentos
     if (argc != 4 && argc != 5) {
@@ -91,6 +80,22 @@ int main(int argc, char **argv){
         informe = 0;
         printf("Cuatro argumentos\n");
     }
+
+    //Se crean las variables para almacenar el socket, error, ask y tamanio
+    int sock;
+    int err;
+    int ack;
+    int tam;
+
+    //Se crea la lista de errores
+    char *codigoError[TAMNOMBRE] =  {&datagrama[4], 
+                                "Fichero no encontrado.",
+                                "Violación de acceso.",
+                                "Espacio de almacenamiento lleno.",
+                                "Operación TFTP ilegal.",
+                                "Identificador de transferencia desconocido.",
+                                "El fichero ya existe.",
+                                "Usuario desconocido."}; 
     
     //Creo el socket
     sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -121,16 +126,19 @@ int main(int argc, char **argv){
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = puerto;
     dest_addr.sin_addr = addr;
-    socklen_t addrlen = sizeof dest_addr;
+
+    //Se crea la variable para almacenar el tamaño de la direccion destino
+    socklen_t addrlen = sizeof(dest_addr);
     
     
-    //datagrama INICIAL
+    //Se preparan los datos del datagrama
     intToBytes(opcode, datagrama);
     strcpy(&datagrama[2], nombreFichero); 
     int i = strlen(nombreFichero)+3;
     strcpy(&datagrama[i], modoTftp); 
     int tamEnvio = strlen(nombreFichero)+strlen(modoTftp)+4;
 
+    //Se envia el datagrama para iniciar el protocolo
     err = sendto(sock, datagrama, tamEnvio, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr));
 
     if(err<0){
@@ -158,6 +166,11 @@ int main(int argc, char **argv){
 
                 if(informe){
                     printf("Recibido bloque del servidor tftp");
+                    if(ack==1){
+                        printf("Es el primer bloque (numero de bloque 1).\n");
+                    }else{
+                        printf("Es el bloque con codigo %d.",ack);
+                    }
                 }
 
                 intToBytes(4, datagrama);
@@ -212,9 +225,11 @@ int main(int argc, char **argv){
     }
         
     if(informe){
-        printf("Era el último bloque. Cerramos el fichero.\n");
+        printf("El bloque %d era el ultimo: cerramos el fichero.\n", ack);
     }
-    
+
+    //Se cierra el fichero 
     fclose(file);
+
     return(EXIT_SUCCESS);
 }
