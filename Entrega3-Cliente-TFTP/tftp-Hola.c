@@ -28,7 +28,7 @@ void intToBytes(int num, char *bytes){
     bytes[1] = num%256;
 }
 
-int main(int args, char **argv){
+int main(int argc, char **argv){
     struct in_addr addr;              //Estructura donde se almacena la addr del servidor (pasada como argumento)
     unsigned char opcode;           //Segundo byte del opcode
     char nombreFichero[TAMNOMBRE];          //nombreFichero del archivo a enviar o recibir
@@ -44,9 +44,9 @@ int main(int args, char **argv){
     char datagrama[4+TAMBLOQUE];     //datagrama para enviar y recibir datos 
     int tam;                       //Tamaño del datagrama
     int ack;                        //Número de paquete esperado
-    char *modo = "octet";           //Modo de lectura/escritura
+    char *modoTftp = "octet";           //modoTftp de lectura/escritura
     FILE *file;                     //Puntero al archivo para leer/escribir
-    char *errcode[TAMNOMBRE] =  {&datagrama[4], //Si errcode es 0 se lee errstring, a partir del byte 4 del datagrama
+    char *codigoError[TAMNOMBRE] =  {&datagrama[4], //Si codigoError es 0 se lee errstring, a partir del byte 4 del datagrama
                                 "Fichero no encontrado.",
                                 "Violación de acceso.",
                                 "Espacio de almacenamiento lleno.",
@@ -55,25 +55,45 @@ int main(int args, char **argv){
                                 "El fichero ya existe.",
                                 "Usuario desconocido."}; 
     
-    //LECTURA DE PARAMETROS
-    if ((args == 4) || (args == 5)){
-        inet_aton(argv[1], &addr); //Se almacena la dirección addr en la estructura
-        sscanf(argv[3], "%s", nombreFichero); //Se almacena el nombreFichero del archivo
-        puerto = getservbyname("tftp", "udp")->s_port; //El puerto se obtiene del sistema operativo
-        
-        if (! strcmp(argv[2], "-r")) //Se guarda el opcode
-            opcode = 1;
-        else if (! strcmp(argv[2], "-w"))
-            opcode = 2;
-        else
-            error("Parámetro desconocido");
-        
-        if ((args == 5) && (! strcmp(argv[4], "-v"))) //Se comprueba si hay un cuarto argumento
+    //Se comprueba la cantidad de argumentos
+    if (argc != 4 && argc != 5) {
+        printf("Missing argument\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    //Se comprueba si la IP es valida
+    if(inet_aton(argv[1], &addr)==0){
+        printf("IP not valid\n");
+        exit(EXIT_FAILURE);
+    }
+
+    //Se comprueba si se ha introducido bien la opcion de lectura/escritura
+    if(strcmp(argv[2], "-r")==0){
+        opcode = 1;
+    }else if(strcmp(argv[2], "-w")==0){
+        opcode = 2;
+    }else{
+        printf("Select opcion between -w or -r\n");
+        exit(EXIT_FAILURE);
+    }
+
+    sscanf(argv[3],"%s",nombreFichero);
+
+    //Se comprueba si se ha introducido la opcion de general el informe
+    if(argc==5){
+        if(strcmp(argv[4], "-v")!=0){
+            printf("Option not valid\n");
+            exit(EXIT_FAILURE);
+        }else{
             informe = 1;
-        else
-            informe = 0;
-    } else
-        error("Número de argumentos incorrecto");
+            printf("Cinco argumentos\n");
+        }
+    }else{
+        informe = 0;
+        printf("Cuatro argumentos\n");
+    }
+
+    puerto = getservbyname("tftp", "udp")->s_port;
     
     //APERTURA DEL SOCKET
     if((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) error(strerror(errno));
@@ -92,8 +112,8 @@ int main(int args, char **argv){
     //datagrama INICIAL
     intToBytes(opcode, datagrama); //Opcode (lectura o escritura)
     strcpy(&datagrama[2], nombreFichero); //nombreFichero del archivo, con el EOS incluido
-    strcpy(&datagrama[2+strlen(nombreFichero)+1], modo); //Modo (octet o netascii), con el  EOS incluido
-    if(sendto(sock, datagrama, 2+strlen(nombreFichero)+1+strlen(modo)+1, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr)) == -1) error(strerror(errno));
+    strcpy(&datagrama[2+strlen(nombreFichero)+1], modoTftp); //modoTftp (octet o netascii), con el  EOS incluido
+    if(sendto(sock, datagrama, 2+strlen(nombreFichero)+1+strlen(modoTftp)+1, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr)) == -1) error(strerror(errno));
     
     //LECTURA DE DATOS DEL SERVIDOR
     if (opcode == 1){
@@ -134,7 +154,7 @@ int main(int args, char **argv){
                 }
                 
             }else if(bytesToInt(datagrama) == 5){
-                //error(errcode[bytesToInt(&datagrama[2])]);
+                //error(codigoError[bytesToInt(&datagrama[2])]);
                 printf("ERORRRR");
             }
         }while(tam == 4+TAMBLOQUE); //Al procesar un paquete de menos de TAMBLOQUE bytes, se finaliza
@@ -157,12 +177,12 @@ int main(int args, char **argv){
                 if(informe) printf("Enviado bloque %d.\n", ack+1);
             
                 if(recvfrom(sock, datagrama, 4+TAMNOMBRE, 0, (struct sockaddr *) &dest_addr, &addrlen) == -1) error(strerror(errno));
-                if (bytesToInt(datagrama) == 5) error(errcode[bytesToInt(&datagrama[2])]);
+                if (bytesToInt(datagrama) == 5) error(codigoError[bytesToInt(&datagrama[2])]);
                 if(informe) printf("Recibido ACK del bloque %d.\n", bytesToInt(&datagrama[2]));
             }while ((tam == TAMBLOQUE) || (bytesToInt(&datagrama[2]) != ack+1)); //Se finaliza cuando se lee el último bloque y se recibe su ack
         
         } else if (bytesToInt(datagrama) == 5) //El datagrama contiene un mensaje de error
-            error(errcode[bytesToInt(&datagrama[2])]);
+            error(codigoError[bytesToInt(&datagrama[2])]);
     }
         
     if(informe) printf("Era el último bloque. Cerramos el fichero.\n");
