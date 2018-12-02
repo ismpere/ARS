@@ -29,24 +29,21 @@ void intToBytes(int num, char *bytes){
 }
 
 int main(int argc, char **argv){
-    struct in_addr addr;              //Estructura donde se almacena la addr del servidor (pasada como argumento)
-    unsigned char opcode;           //Segundo byte del opcode
-    char nombreFichero[TAMNOMBRE];          //nombreFichero del archivo a enviar o recibir
-    int informe;                      //1 = Imprimir informe de pasos; 0 = No
-    
-    int sock;                       //Identificador del socket
-        //Estructura que contiene la direcc de origen (cliente)
-    struct sockaddr_in dest_addr;    //Estructura que contiene la direcc de destino (servidor)
-                  //Longitud de la estructura dest_addr
+
+    struct in_addr addr;              
+    unsigned char opcode;           
+    char nombreFichero[TAMNOMBRE];         
+    int informe;                      
+    int sock;
     int puerto;
     int err;
     
-    char datagrama[4+TAMBLOQUE];     //datagrama para enviar y recibir datos 
-    int tam;                       //Tamaño del datagrama
-    int ack;                        //Número de paquete esperado
-    char *modoTftp = "octet";           //modoTftp de lectura/escritura
-    FILE *file;                     //Puntero al archivo para leer/escribir
-    char *codigoError[TAMNOMBRE] =  {&datagrama[4], //Si codigoError es 0 se lee errstring, a partir del byte 4 del datagrama
+    char datagrama[4+TAMBLOQUE];     
+    int tam;                       
+    int ack;                        
+    char *modoTftp = "octet";           
+    FILE *file;                     
+    char *codigoError[TAMNOMBRE] =  {&datagrama[4], 
                                 "Fichero no encontrado.",
                                 "Violación de acceso.",
                                 "Espacio de almacenamiento lleno.",
@@ -103,8 +100,9 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
+    //Se crea e inicializa la estructura que albergara los datos de  la direccion local
     struct sockaddr_in myaddr;
-       
+
     myaddr.sin_family = AF_INET;
     myaddr.sin_port = 0; //Se asigna el puerto 0 para que el sistema operativo lo complete
     myaddr.sin_addr.s_addr = INADDR_ANY; //No se asigna addr, para que el sistema operativo elija tarjeta de red
@@ -117,6 +115,9 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
     
+    //Se crea e inicializa la estructura de la dirección destino
+    struct sockaddr_in dest_addr;
+
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = puerto;
     dest_addr.sin_addr = addr;
@@ -124,16 +125,27 @@ int main(int argc, char **argv){
     
     
     //datagrama INICIAL
-    intToBytes(opcode, datagrama); //Opcode (lectura o escritura)
-    strcpy(&datagrama[2], nombreFichero); //nombreFichero del archivo, con el EOS incluido
-    strcpy(&datagrama[2+strlen(nombreFichero)+1], modoTftp); //modoTftp (octet o netascii), con el  EOS incluido
-    if(sendto(sock, datagrama, 2+strlen(nombreFichero)+1+strlen(modoTftp)+1, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr)) == -1) error(strerror(errno));
+    intToBytes(opcode, datagrama);
+    strcpy(&datagrama[2], nombreFichero); 
+    int i = strlen(nombreFichero)+3;
+    strcpy(&datagrama[i], modoTftp); 
+    int tamEnvio = strlen(nombreFichero)+strlen(modoTftp)+4;
+
+    err = sendto(sock, datagrama, tamEnvio, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr));
+
+    if(err<0){
+        perror("sendto()");
+        exit(EXIT_FAILURE);
+    }
     
     //LECTURA DE DATOS DEL SERVIDOR
     if (opcode == 1){
-        if(informe) printf("Enviada solicitud de lectura de %s a servidor TFTP en %s.\n", argv[3], argv[1]);
-        ack = 1;
+        if(informe){
+            printf("Enviada solicitud de lectura de %s a servidor tftp en %s .",nombreFichero,argv[1]);
+        }
+
         file = fopen(nombreFichero, "wb");
+        ack = 1;
         do{
             tam = recvfrom(sock, datagrama, 4+TAMBLOQUE, 0, (struct sockaddr *) &dest_addr, &addrlen);
 
@@ -199,7 +211,10 @@ int main(int argc, char **argv){
             error(codigoError[bytesToInt(&datagrama[2])]);
     }
         
-    if(informe) printf("Era el último bloque. Cerramos el fichero.\n");
+    if(informe){
+        printf("Era el último bloque. Cerramos el fichero.\n");
+    }
+    
     fclose(file);
-    return 0;
+    return(EXIT_SUCCESS);
 }
