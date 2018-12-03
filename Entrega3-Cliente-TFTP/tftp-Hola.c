@@ -1,39 +1,49 @@
-// Practica tema 7, Berruezo Franco Alvaro
-#include <stdio.h>
-#include <stdlib.h>
+// Practica tema 7, Perez Martin Ismael
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<errno.h>
+#include<string.h>
+
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
+
 #include <netdb.h>
-#include <errno.h>
-#include <string.h>
-#define TAMNOMBRE 100 //Tamaño máximo del nombreFichero del archivo y de errstring
-#define TAMBLOQUE 512 //Tamaño máximo de datos que se enviarán en cada paquete
 
-void error(char *errstr){
-    /*Imprime errstr y finaliza el programa*/
-    fprintf (stderr, "%s\n", errstr);
-    exit(-1);
-}
+#define TAMNOMBRE 100
+#define TAMBLOQUE 512
 
+//Pasa el puntero char a un entero
 int bytesToInt(char *bytes){
-    /*Toma un puntero (de char) a un entero de dos bytes y devuelve una variable de tipo int que coniene el entero*/
-    int num = 0;
-    num += (unsigned char) bytes[0]*256;
-    num += (unsigned char) bytes[1];
-    return num;
+    int n = 0;
+    n += (unsigned char) bytes[0]*256;
+    n += (unsigned char) bytes[1];
+    return n;
 }
 
-void intToBytes(int num, char *bytes){
-    /*Toma una variable de tipo int y la almacena en un puntero (de char) como un entero de dos bytes*/
-    bytes[0] = num/256;
-    bytes[1] = num%256;
+//Pasa un entero a un puntero char de bytes
+void intToBytes(int n, char *bytes){
+    bytes[0] = n/256;
+    bytes[1] = n%256;
+}
+
+//Se imprime el erro de la lista predefinida
+void imprimeErrorPredefinido(char *error){
+    fprintf (stderr, "%s\n", error);
+    exit(EXIT_FAILURE);
 }
 
 int main(int argc, char **argv){
 
+    //Se crean las variables para almacenar los datos necesarios
     char nombreFichero[TAMNOMBRE];
     char datagrama[4+TAMBLOQUE]; 
     char *modoTftp = "octet";  
     unsigned char opcode;
+
+    //Se crean las variables para comprobar si se desea el informe en la operacion y el puerto
     int informe;
     int puerto;
 
@@ -142,7 +152,7 @@ int main(int argc, char **argv){
     err = sendto(sock, datagrama, tamEnvio, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr));
 
     if(err<0){
-        perror("sendto()");
+        perror("sendto() de inicio");
         exit(EXIT_FAILURE);
     }
     
@@ -152,9 +162,11 @@ int main(int argc, char **argv){
             printf("Enviada solicitud de lectura de %s a servidor tftp en %s .",nombreFichero,argv[1]);
         }
 
+        //Se abre el fichero en modo escritura y se inicializa el codigo de ack
         file = fopen(nombreFichero, "wb");
         ack = 1;
         do{
+            //Se recibe el paquete del servidor tftp
             tam = recvfrom(sock, datagrama, 4+TAMBLOQUE, 0, (struct sockaddr *) &dest_addr, &addrlen);
 
             if(tam<0){
@@ -162,6 +174,7 @@ int main(int argc, char **argv){
                 exit(EXIT_FAILURE);
             }
 
+            //Se comprueba que se ha recibido el bloque
             if (bytesToInt(datagrama) == 3){
 
                 if(informe){
@@ -173,6 +186,7 @@ int main(int argc, char **argv){
                     }
                 }
 
+                //Se comprueba si se recibe el ack, si se recibe se escribe se incrementa en ese caso
                 intToBytes(4, datagrama);
                 if(bytesToInt(&datagrama[2]) == ack){
                     fwrite(&datagrama[4], 1, tam-4, file);
@@ -182,6 +196,7 @@ int main(int argc, char **argv){
                     intToBytes(ack-1, &datagrama[2]);
                 }
                     
+                //Se envia el ack correspondiente al servidor
                 err = sendto(sock, datagrama, 4, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr));
                 if(err<0){
                     perror("sendto()");
@@ -193,38 +208,89 @@ int main(int argc, char **argv){
                 }
                 
             }else if(bytesToInt(datagrama) == 5){
-                //error(codigoError[bytesToInt(&datagrama[2])]);
-                printf("ERORRRR");
+                imprimeErrorPredefinido(codigoError[bytesToInt(&datagrama[2])]);
             }
         }while(tam == 4+TAMBLOQUE); //Al procesar un paquete de menos de TAMBLOQUE bytes, se finaliza
         
-    //ESCRITURA DE DATOS EN EL SERVIDOR
+    //Se inicia la escritura del fichero en el servidor
     }else if(opcode == 2){
         if(informe){
             printf("Enviada solicitud de escritura de %s a servidor tftp en %s .",nombreFichero,argv[1]);
         }
 
+        //Se abre el fichero en modo escritura
         file = fopen(nombreFichero, "rb");
-        
-        if(recvfrom(sock, datagrama, 4+TAMNOMBRE, 0, (struct sockaddr *) &dest_addr, &addrlen) == -1) error(strerror(errno));
-        if (bytesToInt(datagrama) == 4){ //El datagrama es un ACK
-            if(informe) printf("Recibido ACK del bloque %d.\n", bytesToInt(&datagrama[2]));
+
+        //Se recive el primer paquete de confirmacion de escritura
+        int tamRecv = 4 + TAMNOMBRE;
+        err = recvfrom(sock, datagrama, tamRecv, 0, (struct sockaddr *) &dest_addr, &addrlen);
+
+        if(err<0){
+            perror("recvfrom() de inicio");
+            exit(EXIT_FAILURE);
+        }
+
+        if (bytesToInt(datagrama) == 4){
+
+            if(informe){
+                printf("Recibido ACK del bloque %d.\n", bytesToInt(&datagrama[2]));
+            }
+
             do{
-                ack = bytesToInt(&datagrama[2]);                 //Se guarda el número de paquete que quiere el servidor
-                fseek(file, TAMBLOQUE*ack, SEEK_SET);           //Se coloca el puntero al fichero en la posición correspondiente
-                intToBytes(3, datagrama);                        //Se crea un datagrama de datos 
-                intToBytes(ack+1, &datagrama[2]);                //Se escribe el número de bloque que se va a enviar
-                tam = fread(&datagrama[4], 1, TAMBLOQUE, file); //Se escriben los datos
-                if(sendto(sock, datagrama, 4+tam, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr)) == -1) error(strerror(errno));
-                if(informe) printf("Enviado bloque %d.\n", ack+1);
+                //Se prepara el envio al servidor
+                ack = bytesToInt(&datagrama[2]);  
+                //Se coloca el puntero en el fichero dependiendo del ack recibido               
+                fseek(file, TAMBLOQUE*ack, SEEK_SET);       
+                intToBytes(3, datagrama);                    
+                intToBytes(ack+1, &datagrama[2]);      
+                tam = fread(&datagrama[4], 1, TAMBLOQUE, file); 
+
+                //Se envia el paquete al servidor
+                err = sendto(sock, datagrama, 4+tam, 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr));
+
+                if(err<0){
+                    perror("sendto() de escritura");
+                    exit(EXIT_FAILURE);
+                }
+
+                if(informe){
+                    printf("Enviado bloque al servidor tftp");
+                    if(ack==1){
+                        printf("Es el primer bloque (numero de bloque 1).\n");
+                    }else{
+                        printf("Es el bloque con codigo %d.",ack);
+                    }
+                }
             
-                if(recvfrom(sock, datagrama, 4+TAMNOMBRE, 0, (struct sockaddr *) &dest_addr, &addrlen) == -1) error(strerror(errno));
-                if (bytesToInt(datagrama) == 5) error(codigoError[bytesToInt(&datagrama[2])]);
-                if(informe) printf("Recibido ACK del bloque %d.\n", bytesToInt(&datagrama[2]));
-            }while ((tam == TAMBLOQUE) || (bytesToInt(&datagrama[2]) != ack+1)); //Se finaliza cuando se lee el último bloque y se recibe su ack
+                //Se recibe el ack de confirmacion de llegada del paquete
+                err = recvfrom(sock, datagrama, 4+TAMNOMBRE, 0, (struct sockaddr *) &dest_addr, &addrlen);
+
+                if(err<0){
+                    perror("recvfrom() de escritura");
+                    exit(EXIT_FAILURE);
+                }
+
+                //Se comprueba que no exista ningun error de los definidos
+                if (bytesToInt(datagrama) == 5){
+                    imprimeErrorPredefinido(codigoError[bytesToInt(&datagrama[2])]);
+                }
+
+                if(informe){
+                    printf("Recibido ACK del servidor tftp");
+                    if(ack==1){
+                        printf("Es el primer ACK (numero de bloque 1).\n");
+                    }else{
+                        printf("Es el ACK con codigo %d.",bytesToInt(&datagrama[2]));
+                    }
+                }
+            
+            //Se comprueba para controlar el caso de si es divisible por el tamanio de bloque o no
+            }while ((tam == TAMBLOQUE) || (bytesToInt(&datagrama[2]) != ack+1));
         
-        } else if (bytesToInt(datagrama) == 5) //El datagrama contiene un mensaje de error
-            error(codigoError[bytesToInt(&datagrama[2])]);
+        //Se comprueba si existe algun error al comienzo del protocolo
+        }else if(bytesToInt(datagrama) == 5){
+            imprimeErrorPredefinido(codigoError[bytesToInt(&datagrama[2])]);
+        }
     }
         
     if(informe){
