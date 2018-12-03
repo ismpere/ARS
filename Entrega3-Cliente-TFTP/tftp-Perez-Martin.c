@@ -84,11 +84,9 @@ int main(int argc, char **argv){
             exit(EXIT_FAILURE);
         }else{
             informe = 1;
-            printf("Cinco argumentos\n");
         }
     }else{
         informe = 0;
-        printf("Cuatro argumentos\n");
     }
 
     //Se crean las variables para almacenar el socket, error, ask y tamanio
@@ -258,7 +256,7 @@ int main(int argc, char **argv){
                     if(ack==1){
                         printf("Es el primer bloque (numero de bloque 1).\n");
                     }else{
-                        printf("Es el bloque con codigo %d.\n",ack);
+                        printf("Es el bloque con codigo %d.\n",ack+1);
                     }
                 }
             
@@ -276,11 +274,11 @@ int main(int argc, char **argv){
                 }
 
                 if(informe){
-                    printf("Recibido ACK del servidor tftp");
+                    printf("Recibido ACK del servidor tftp\n");
                     if(ack==1){
                         printf("Es el primer ACK (numero de bloque 1).\n");
                     }else{
-                        printf("Es el ACK con codigo %d.",bytesToInt(&datagrama[2]));
+                        printf("Es el ACK con codigo %d.\n",bytesToInt(&datagrama[2]));
                     }
                 }
             
