@@ -52,7 +52,7 @@ int main(int argc, char **argv){
     FILE *file;                                   
     
     //Se comprueba la cantidad de argumentos
-    if (argc != 4 && argc != 5) {
+    if(argc != 4 && argc != 5) {
         printf("Missing argument\n");
         exit(EXIT_FAILURE);
     }
@@ -173,7 +173,7 @@ int main(int argc, char **argv){
             }
 
             //Se comprueba que se ha recibido el bloque
-            if (bytesToInt(datagrama) == 3){
+            if(bytesToInt(datagrama) == 3){
 
                 if(informe){
                     printf("Recibido bloque del servidor tftp\n");
@@ -228,7 +228,7 @@ int main(int argc, char **argv){
             exit(EXIT_FAILURE);
         }
 
-        if (bytesToInt(datagrama) == 4){
+        if(bytesToInt(datagrama) == 4){
 
             if(informe){
                 printf("Recibido ACK del bloque %d.\n", bytesToInt(&datagrama[2]));
@@ -269,7 +269,7 @@ int main(int argc, char **argv){
                 }
 
                 //Se comprueba que no exista ningun error de los definidos
-                if (bytesToInt(datagrama) == 5){
+                if(bytesToInt(datagrama) == 5){
                     imprimeErrorPredefinido(codigoError[bytesToInt(&datagrama[2])]);
                 }
 
@@ -283,7 +283,7 @@ int main(int argc, char **argv){
                 }
             
             //Se comprueba para controlar el caso de si es divisible por el tamanio de bloque o no
-            }while ((tam == TAMBLOQUE) || (bytesToInt(&datagrama[2]) != ack+1));
+            }while((tam == TAMBLOQUE) || (bytesToInt(&datagrama[2]) != ack+1));
         
         //Se comprueba si existe algun error al comienzo del protocolo
         }else if(bytesToInt(datagrama) == 5){
