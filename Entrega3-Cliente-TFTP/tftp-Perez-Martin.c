@@ -292,7 +292,12 @@ int main(int argc, char **argv){
     }
         
     if(informe){
-        printf("El bloque %d era el ultimo: cerramos el fichero.\n", ack-1);
+        if(opcode==1){
+            printf("El bloque %d era el ultimo: cerramos el fichero.\n", ack-1);
+        }else{
+            printf("El bloque %d era el ultimo: cerramos el fichero.\n", ack+1);
+        }
+        
     }
 
     //Se cierra el fichero 
