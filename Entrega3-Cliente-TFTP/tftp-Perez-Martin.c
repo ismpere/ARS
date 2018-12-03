@@ -157,7 +157,7 @@ int main(int argc, char **argv){
     //Se inicia la lectura del archivo
     if(opcode == 1){
         if(informe){
-            printf("Enviada solicitud de lectura de %s a servidor tftp en %s \n.",nombreFichero,argv[1]);
+            printf("Enviada solicitud de lectura de %s a servidor tftp en %s. \n",nombreFichero,argv[1]);
         }
 
         //Se abre el fichero en modo escritura y se inicializa el codigo de ack
@@ -213,7 +213,7 @@ int main(int argc, char **argv){
     //Se inicia la escritura del fichero en el servidor
     }else if(opcode == 2){
         if(informe){
-            printf("Enviada solicitud de escritura de %s a servidor tftp en %s \n.",nombreFichero,argv[1]);
+            printf("Enviada solicitud de escritura de %s a servidor tftp en %s.\n",nombreFichero,argv[1]);
         }
 
         //Se abre el fichero en modo escritura
