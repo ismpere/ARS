@@ -142,7 +142,7 @@ int main(int argc, char **argv){
     }
 
     //Se comprueba que el checksum da 0
-    printf("Checksum: %x\n", getChecksum(request));
+    //printf("Checksum: %x\n", getChecksum(request));
 
     //Se prepara el envio del paquete
 
@@ -202,7 +202,7 @@ int main(int argc, char **argv){
         printf("-> Tamaño de la respuesta: %d\n", (int)sizeof(response));
         printf("-> Cadena recibida: %s\n", response.payload);
         printf("-> Identifier (pid): %d\n", response.ID);
-        printf("-> TTL: %d", response.ipHeader.TTL);
+        printf("-> TTL: %d\n", response.ipHeader.TTL);
     }
 
     //Se comprueba que la respuesta es correcta
