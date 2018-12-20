@@ -217,8 +217,10 @@ int main(int argc, char **argv){
     int errorType = response.icmpHeader.Type;
     int errorCode = response.icmpHeader.Code;
 
+    printf("Descripción de la respuesta: ");
+
     if(errorType==0 && errorCode==0){
-        printf("Descripción de la respuesta: respuesta correcta (type 0, code 0)\n");
+        printf("respuesta correcta (type 0, code 0)\n");
         exit(EXIT_SUCCESS);
 
     //Si no son correctas, se realiza el control de errores para imprimir por pantalla el motivo del error
@@ -227,7 +229,7 @@ int main(int argc, char **argv){
         switch(errorType){
             case 3:
                 if(errorCode<16){
-                    printf("Destination Unreachable: %s\n", errorTipo3[errorCode]);
+                    printf("Destination Unreachable - %s\n", errorTipo3[errorCode]);
                 }else{
                     printf("Code %d nor exists with type %d\n", errorCode, errorType);
                 }
@@ -243,7 +245,7 @@ int main(int argc, char **argv){
             
             case 5:
                 if(errorCode<4){
-                    printf("Redirect Message: %s\n", errorTipo5[errorCode]);
+                    printf("Redirect Message - %s\n", errorTipo5[errorCode]);
                 }else{
                     printf("Code %d nor exists with type %d\n", errorCode, errorType);
                 }
@@ -278,7 +280,7 @@ int main(int argc, char **argv){
             
             case 11:
                 if(errorCode<2){
-                    printf("Time Exceeded: %s\n", errorTipo11[errorCode]);
+                    printf("Time Exceeded - %s\n", errorTipo11[errorCode]);
                 }else{
                     printf("Code %d nor exists with type %d\n", errorCode, errorType);
                 }
@@ -286,7 +288,7 @@ int main(int argc, char **argv){
 
             case 12:
                 if(errorCode<3){
-                    printf("Parameter Problem: Bad IP header: %s\n", errorTipo12[errorCode]);
+                    printf("Parameter Problem: Bad IP header - %s\n", errorTipo12[errorCode]);
                 }else{
                     printf("Code %d nor exists with type %d\n", errorCode, errorType);
                 }
@@ -402,7 +404,7 @@ int main(int argc, char **argv){
 
             case 43:
                 if(errorCode<5){
-                    printf("Extended Echo Reply: %s\n", errorTipo43[errorCode]);
+                    printf("Extended Echo Reply - %s\n", errorTipo43[errorCode]);
                 }else{
                     printf("Code %d nor exists with type %d\n", errorCode, errorType);
                 }
