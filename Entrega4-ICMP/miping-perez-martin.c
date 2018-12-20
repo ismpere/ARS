@@ -37,8 +37,8 @@ int main(int argc, char **argv){
     int err;
     int sock;
     char ip[30] = "";
-    unsigned char type = '8';
-    unsigned char code = '0';
+    unsigned char type = 8;
+    unsigned char code = 0;
     char *payload = "Este es el payload"; 
     ICMPHeader cabecera;
     ECHORequest request;
@@ -142,12 +142,12 @@ int main(int argc, char **argv){
     }
 
     //Se comprueba que el checksum da 0
-    //printf("Checksum: %x\n", getChecksum(request));
+    printf("Checksum: %x\n", getChecksum(request));
 
     //Se prepara el envio del paquete
 
     //Creo el socket
-    sock = socket(AF_INET, SOCK_DGRAM, 0);
+    sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 
     if(sock<0){
         perror("socket()");
@@ -189,7 +189,7 @@ int main(int argc, char **argv){
     printf("Paquete ICMP enviado a %s\n", ip);
 
     //Se recibe el datagrama de respuesta de ICMP
-    err = recvfrom(sock, &response, sizeof(response), 0, (struct sockaddr *) &dest_addr, &addrlen);
+    err = recvfrom(sock, &response, 512, 0, (struct sockaddr *) &dest_addr, &addrlen);
 
     if(err<0){
         perror("recvfrom()");
