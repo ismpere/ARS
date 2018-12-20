@@ -29,24 +29,30 @@ unsigned short int getChecksum(ECHORequest request){
     acumulador = (acumulador >> 16) + (acumulador & 0x0000ffff);
     acumulador = ~acumulador;
 
+    //Se devuelven los ultimos 16 bits
     return (unsigned short int)acumulador;
 }
 
 int main(int argc, char **argv){
+
+    //Se crean las variables para almacenar los campos principales de ICMP, control de errores y debug
     int debug;
     int err;
     int sock;
     char ip[30] = "";
-    unsigned char type = 8;
-    unsigned char code = 0;
+    unsigned char type = '8';
+    unsigned char code = '0';
     char *payload = "Este es el payload"; 
+
+    //Se crean las variables para almacenar los datagramas
     ICMPHeader cabecera;
     ECHORequest request;
     ECHOResponse response;
 
+    //Se crea la estructura para almacenar la dirección de envio
     struct in_addr addr;  
 
-    //Se crea la lista de errores
+    //Se crean las listas de errores
     char *errorTipo3[16] =  {"Destination network unreachable", 
                                 "Destination host unreachable",
                                 "Destination protocol unreachable",
@@ -96,10 +102,11 @@ int main(int argc, char **argv){
         printf("IP not valid\n");
         exit(EXIT_FAILURE);
     }else{
+        //Se copia la ip introducida a una variable
         strcpy(ip, argv[1]);
     }
 
-    //Se comprueba si se ha introducido la opcion de general el informe
+    //Se comprueba si se ha introducido la opcion de general el informe (debug)
     if(argc==3){
         if(strcmp(argv[2], "-v")!=0){
             printf("Option not valid\n");
@@ -111,6 +118,7 @@ int main(int argc, char **argv){
         debug = 0;
     }
 
+    //Se comienza a preparar la cabecera del datagrama ICMP
     if(debug) printf("-> Generando cabecera ICMP.\n");
 
     cabecera.Type = type;
@@ -121,6 +129,8 @@ int main(int argc, char **argv){
         printf("-> Type: %c\n", cabecera.Type);
         printf("-> Code: %c\n", cabecera.Code);
     }
+
+    //Se añade la cabecera al datagrama y se rellena el resto de campos
 
     request.icmpHeader = cabecera;
     request.ID = getpid();
@@ -133,7 +143,7 @@ int main(int argc, char **argv){
         printf("-> Cadena a enviar: %s\n", request.payload);
     }
 
-    //Se guarda el valor del checksum
+    //Se calcula y guarda el valor del checksum
     request.icmpHeader.Checksum = getChecksum(request);
 
     if(debug){
@@ -141,12 +151,9 @@ int main(int argc, char **argv){
         printf("-> Tamaño total del paquete ICMP: %d\n", (int)sizeof(request));
     }
 
-    //Se comprueba que el checksum da 0
-    //printf("Checksum: %x\n", getChecksum(request));
-
     //Se prepara el envio del paquete
 
-    //Creo el socket
+    //Creo el socket con tipo RAW y el protocolo ICMP
     sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 
     if(sock<0){
@@ -178,7 +185,7 @@ int main(int argc, char **argv){
     //Se crea la variable para almacenar el tamaño de la direccion destino
     socklen_t addrlen = sizeof(dest_addr);
 
-    //Se envia el datagrama ICMP
+    //Se envia el datagrama ICMP a la ip introducida
     err = sendto(sock, &request, sizeof(request), 0, (struct sockaddr *) &dest_addr, sizeof(dest_addr));
 
     if(err<0){
@@ -188,7 +195,7 @@ int main(int argc, char **argv){
 
     printf("Paquete ICMP enviado a %s\n", ip);
 
-    //Se recibe el datagrama de respuesta de ICMP
+    //Se recibe el datagrama de respuesta de ICMP en la variable response
     err = recvfrom(sock, &response, 512, 0, (struct sockaddr *) &dest_addr, &addrlen);
 
     if(err<0){
@@ -205,7 +212,7 @@ int main(int argc, char **argv){
         printf("-> TTL: %d\n", response.ipHeader.TTL);
     }
 
-    //Se comprueba que la respuesta es correcta
+    //Se comprueba que los campos de la respuesta son correctos
 
     int errorType = response.icmpHeader.Type;
     int errorCode = response.icmpHeader.Code;
@@ -214,6 +221,7 @@ int main(int argc, char **argv){
         printf("Descripción de la respuesta: respuesta correcta (type 0, code 0)\n");
         exit(EXIT_SUCCESS);
 
+    //Si no son correctas, se realiza el control de errores para imprimir por pantalla el motivo del error
     }else if(errorType>0 && errorCode>0){
 
         switch(errorType){
