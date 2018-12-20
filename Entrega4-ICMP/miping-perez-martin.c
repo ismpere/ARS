@@ -40,8 +40,8 @@ int main(int argc, char **argv){
     int err;
     int sock;
     char ip[30] = "";
-    unsigned char type = '8';
-    unsigned char code = '0';
+    unsigned char type = 8;
+    unsigned char code = 0;
     char *payload = "Este es el payload"; 
 
     //Se crean las variables para almacenar los datagramas
